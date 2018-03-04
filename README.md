@@ -1,52 +1,68 @@
 # seneca-mqtt-transport
 
-[![NPM][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Coverage][coverage-image]][coverage-url]
+[![NPM][npm-image]][npm-url]
 
-Seneca NATS transport.
+Seneca MQTT transport.
 
-[Seneca](http://senecajs.org/) is a microservices framework and [NATS](http://nats.io/) is 
-an open-source, high-performance, lightweight cloud messaging system. This library provides
+[Seneca](http://senecajs.org/) is a microservices framework and [EMQ](http://emqtt.io/) is 
+an open-source, high-performance, lightweight MQTT cloud messaging system. This library provides
 a publish-subscribe message distribution model.
 
 ## Installation
 
 ```bash
-npm install seneca-nats-transport
+npm install seneca-mqtt-transport
 ```
 
 ## Usage
 
-[gnatsd server](http://nats.io/download/) **should** be running.
+[EMQ server](http://emqtt.io/downloads) **should** be running.
 
 ```javascript
 // server.js
 
 require('seneca')()
-  .use('nats-transport')
+  .use('mqtt-transport', {  // Send optional parameters to the library
+    mqtt{
+      url: 'mqtt://server:port',    //optional. Default mqtt://127.0.0.1:1883
+      prefix: 'miservice',          //optional. Default none
+      emq: true                     //optional. Support for $queue topic for load balancing. Only EMQ server
+    }    
+  })
   .add({role: 'foo', cmd: 'bar'}, function(msg, done) { return done(null, msg); })
-  .listen({type:'nats'});
+  .listen({
+    type:'mqtt', 
+    mqtt: { // You cand send parameters in use method or listen method
+      url: 'mqtt://server:port',    //optional. Default mqtt://127.0.0.1:1883
+      prefix: 'miservice',          //optional. Default none
+      emq: true                     //optional. Support for $queue topic for load balancing. Only EMQ server
+    }
+  });
 ```
 
 ```javascript
 // client.js
 
 require('seneca')()
-  .use('nats-transport')
-  .client({type:'nats'})
+  .use('mqtt-transport'{  // Send optional parameters to the library
+    mqtt{
+      url: 'mqtt://server:port',    //optional. Default mqtt://127.0.0.1:1883
+      prefix: 'miservice',          //optional. Default none
+      emq: true                     //optional. Support for $queue topic for load balancing. Only EMQ server
+    }    
+  })
+  .client({
+    type:'mqtt', 
+    mqtt: { // You cand send parameters in use method or listen method
+      url: 'mqtt://server:port',    //optional. Default mqtt://127.0.0.1:1883
+      prefix: 'miservice',          //optional. Default none
+      emq: true                     //optional. Support for $queue topic for load balancing. Only EMQ server
+    }
+  })
   .act({role: 'foo', cmd: 'bar', arg1: 1, arg2: 2}, console.log);
 ```
 
-```javascript
-// nats.js
-
-require('nats').connect().subscribe('*', function(msg) {
-  console.log(msg);
-});
-```
-
 ```bash
-gnatsd
-node nats.js
 node server.js
 node client.js
 ```
@@ -56,11 +72,5 @@ node client.js
 Licensed under The MIT License (MIT)  
 For the full copyright and license information, please view the LICENSE.txt file.
 
-[npm-url]: http://npmjs.org/package/seneca-nats-transport
-[npm-image]: https://badge.fury.io/js/seneca-nats-transport.svg
-
-[travis-url]: https://travis-ci.org/devfacet/seneca-nats-transport
-[travis-image]: https://travis-ci.org/devfacet/seneca-nats-transport.svg?branch=master
-
-[coverage-url]: https://coveralls.io/github/devfacet/seneca-nats-transport?branch=master
-[coverage-image]: https://coveralls.io/repos/github/devfacet/seneca-nats-transport/badge.svg?branch=master
+[npm-url]: http://npmjs.org/package/seneca-mqtt-transport
+[npm-image]: https://badge.fury.io/js/seneca-mqtt-transport.svg

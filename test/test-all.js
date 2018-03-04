@@ -7,6 +7,13 @@ var lib = require('../'),
   mqtt = require('mqtt'),
   expect = require('chai').expect;
 
+var mqtt_options = {
+  mqtt: {
+    emq: true,
+    prefix: 'ms'
+  }
+};
+
 // Tests
 
 describe('lib', function () {
@@ -36,9 +43,9 @@ describe('lib', function () {
     var pattern = { role: 'foo', cmd: 'bar' },
       message = { role: 'foo', cmd: 'bar', argNum: 1, argStr: '2', argBool: true, argObj: {}, argAry: [] };
 
-    nc.subscribe('seneca_any_act');
+    nc.subscribe('ms/seneca_any_act');
     nc.on('message', function (topic, msg) {
-      if (topic === 'seneca_any_act') {
+      if (topic === 'ms/seneca_any_act') {
         expect(JSON.parse(msg).act).to.deep.equal(message);
         done();
       }
@@ -46,13 +53,13 @@ describe('lib', function () {
     });
 
     server
-      .use(lib)
+      .use(lib, mqtt_options)
       .add(pattern, function (msg, done) { return done(null, msg); })
-      .listen({ type: 'mqtt', mqtt: { url: 'mqtt://localhost:1883' } });
+      .listen({ type: 'mqtt' });
 
     client
-      .use(lib)
-      .client({ type: 'mqtt', mqtt: { url: 'mqtt://localhost:1883' } })
+      .use(lib, mqtt_options)
+      .client({ type: 'mqtt' })
       .act(message);
   });
 
@@ -61,9 +68,9 @@ describe('lib', function () {
     var pattern = { role: 'foo', cmd: 'bar' },
       message = { role: 'foo', cmd: 'bar', argNum: 1, argStr: '2', argBool: true, argObj: {}, argAry: [] };
 
-    nc.subscribe('seneca_any_res');
+    nc.subscribe('ms/seneca_any_res');
     nc.on('message', function (topic, msg) {
-      if (topic === 'seneca_any_res') {
+      if (topic === 'ms/seneca_any_res') {
         var res = JSON.parse(msg).res;
         expect(res).to.be.a('object');
         expect(res.role).to.equal('foo');
@@ -79,12 +86,12 @@ describe('lib', function () {
     });
 
     server
-      .use(lib)
+      .use(lib, mqtt_options)
       .add(pattern, function (msg, done) { return done(null, msg); })
       .listen({ type: 'mqtt' });
 
     client
-      .use(lib)
+      .use(lib, mqtt_options)
       .client({ type: 'mqtt' })
       .act(message);
   });

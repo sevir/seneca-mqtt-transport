@@ -23,7 +23,9 @@ module.exports = function (options) {
   options = seneca.util.deepextend({
     mqtt: {
       keepalive: 60,
-      reconnectPeriod: 1000
+      reconnectPeriod: 1000,
+      prefix: '',
+      emq: false    // Enable EMQ Queue subscribe for load balancing
     }
   }, senecaOpts.transport, options);
 
@@ -35,7 +37,7 @@ module.exports = function (options) {
       type = msg.type,
       clientOpts = seneca.util.clean(seneca.util.deepextend({
         clientId: 'seServ_' + Math.random().toString(16).substr(2, 8),
-      }, options[type], msg)),
+      }, options[type], msg[type])),
       clientName = 'listen-' + type;
 
     // Fix problem with seneca default port
@@ -48,11 +50,13 @@ module.exports = function (options) {
 
       // Listen topics
       transpUtils.listen_topics(seneca, msg, clientOpts, function (topic) {
-        var topicAct = topic + '_act',
-          topicRes = topic + '_res';
+        var prefix = clientOpts.prefix ? clientOpts.prefix + '/': '';
+
+        var topicAct = prefix + topic + '_act',
+          topicRes = prefix + topic + '_res';
 
         // Subscribe to act topic
-        nc.subscribe(topicAct);
+        nc.subscribe((clientOpts.emq?'$queue/':'' ) + topicAct);
 
         nc.on('message', function(topic, msg){
           if(topic == topicAct){
@@ -94,12 +98,11 @@ module.exports = function (options) {
   seneca.add({ role: 'transport', hook: 'client', type: 'mqtt' }, 
   // Client hook for the transport
   function (msg, done) {
-
     var seneca = this,
       type = msg.type,
       clientOpts = seneca.util.clean(seneca.util.deepextend({
         clientId: 'seCli_' + Math.random().toString(16).substr(2, 8),
-      }, options[type], msg)),
+      }, options[type], msg[type])),
       clientName = 'client-' + type;
 
       // Fix problem with seneca default port
@@ -112,11 +115,14 @@ module.exports = function (options) {
 
       // Send is called for per topic
       function send(spec, topic, sendDone) {
-        var topicAct = topic + '_act',
-          topicRes = topic + '_res';
+        
+        var prefix = clientOpts.prefix ? clientOpts.prefix + '/': '';
+
+        var topicAct = prefix + topic + '_act',
+          topicRes = prefix + topic + '_res';
 
         // Subscribe to response topic
-        nc.subscribe(topicRes);
+        nc.subscribe((clientOpts.emq?'$queue/':'' ) + topicRes);
 
         nc.on('message', function (topic, msg) {
           if (topic == topicRes){
